@@ -1,0 +1,5 @@
+name: CommandAPI
+version: 1.0
+main: net.threadly.commandapi.CommandAPI
+api-version: 1.15
+authors: [threadly]
