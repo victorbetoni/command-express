@@ -1,7 +1,6 @@
 package net.threadly.commandapi;
 
-import com.sun.istack.internal.NotNull;
-
+import javax.annotation.Nonnull;
 import java.util.*;
 
 public class CommandSpec {
@@ -21,7 +20,6 @@ public class CommandSpec {
         private boolean playerOnly = false;
         private Optional<String> permission;
 
-        @NotNull
         public Builder alias(String alias){
             this.alias = alias;
             return this;
@@ -42,7 +40,6 @@ public class CommandSpec {
             return this;
         }
 
-        @NotNull
         public Builder executor(CommandRunner runner){
             this.executor = runner;
             return this;
