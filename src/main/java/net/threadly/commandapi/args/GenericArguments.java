@@ -11,36 +11,36 @@ import java.util.UUID;
 
 public final class GenericArguments {
 
-    public static class Builder<T> {
+    public static class Builder<T,U> {
         private String key;
-        private Caster<T> caster;
+        private Caster<T,U> caster;
 
-        public Builder<T> caster(Caster<T> caster) {
+        public Builder<T,U> caster(Caster<T,U> caster) {
             this.caster = caster;
             return this;
         }
 
-        public Builder<T> key(String key){
+        public Builder<T,U> key(String key){
             this.key = key;
             return this;
         }
 
-        public CommandElement<T> build() {
+        public CommandElement<T,U> build() {
             return new CommandElement<>(key, caster);
         }
     }
 
-    public static <T> Builder<T> builder() {
+    public static <T,U> Builder<T,U> builder() {
         return new Builder<>();
     }
 
-    public static CommandElement<OfflinePlayer> offlinePlayer(String key) {
+    public static CommandElement<String, OfflinePlayer> offlinePlayer(String key) {
         return new CommandElement<>(key, (passedArgument) -> {
             return Bukkit.getOfflinePlayer(UUID.fromString(passedArgument));
         });
     }
 
-    public static CommandElement<Player> onlinePlayer(String key) {
+    public static CommandElement<String, Player> onlinePlayer(String key) {
         return new CommandElement<>(key, (passedArgument) -> {
             Optional<Player> player = Optional.ofNullable(Bukkit.getPlayer(UUID.fromString(passedArgument)));
             player.orElseThrow(CastNotPossibleException::new);
@@ -48,11 +48,11 @@ public final class GenericArguments {
         });
     }
 
-    public static CommandElement<String> string(String key) {
-        return new CommandElement<>(key, (passedArgument) -> {return (String) passedArgument;});
+    public static CommandElement<String, String> string(String key) {
+        return new CommandElement<>(key, (passedArgument) -> (String) passedArgument);
     }
 
-    public static CommandElement<Integer> integer(String key) {
+    public static CommandElement<String, Integer> integer(String key) {
         return new CommandElement<>(key, (passedArgument) -> {
             try {
                 return Integer.valueOf(passedArgument);
@@ -62,7 +62,7 @@ public final class GenericArguments {
         });
     }
 
-    public static CommandElement<Boolean> bool(String key) {
+    public static CommandElement<String, Boolean> bool(String key) {
         return new CommandElement<>(key, (passedArgument) -> {
             try{
                 return Boolean.valueOf(passedArgument);
