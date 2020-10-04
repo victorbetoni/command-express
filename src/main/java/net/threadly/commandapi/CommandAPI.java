@@ -1,5 +1,10 @@
 package net.threadly.commandapi;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
+import net.threadly.commandapi.args.CommandContext;
+import net.threadly.commandapi.args.CommandElement;
+import net.threadly.commandapi.exception.CastNotPossibleException;
 import net.threadly.commandapi.result.CommandResult;
 import net.threadly.commandapi.result.Result;
 import org.bukkit.Sound;
@@ -10,6 +15,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class CommandAPI extends JavaPlugin {
     private static Set<CommandSpec> registry;
@@ -24,129 +32,134 @@ public class CommandAPI extends JavaPlugin {
     }
 
     public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec entryPoint){
-        plugin.getCommand(entryPoint.getAlias()).setExecutor(new CommandExecutor() {
-            @Override
-            public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
-                ListIterator<String> argsIterator = Arrays.asList(strings).listIterator();
-                CommandSpec spec = entryPoint;
-                Map<String, String> args = new HashMap<>();
-                ListIterator<String> specArgumentsIterator = spec.getArguments().listIterator();
-                StringBuilder path = new StringBuilder();
-                path.append(spec.getAlias());
+        Objects.requireNonNull(plugin.getCommand(entryPoint.getAlias())).setExecutor((sender, command, label, args) -> {
 
-                if(argsIterator.hasNext()){
-                    path.append(argsIterator.next());;
+            CommandSpec commandSpec = null;
 
-                    while(getSpecByPath(path.toString().trim()) != null){
-                        path.append(argsIterator.next());
-                        spec = getSpecByPath(path.toString().trim());
-                    }
-                    specArgumentsIterator = spec.getArguments().listIterator();
-                    String text = "";
-                    String previousArg = "";
-                    while(argsIterator.hasNext()) {
-                        if(!specArgumentsIterator.hasNext()){
-                            if(text.equalsIgnoreCase("")){
-                                text += argsIterator.previous();
+            ListIterator<String> commandPathIterator = Arrays.asList(args).listIterator();
+            ArrayList<CommandElement> commandSpectedArguments = new ArrayList<>();
+
+            Map<String, Object> arguments = new HashMap<>();
+
+            if(commandPathIterator.hasNext()) {
+                StringBuilder pathBuilder = new StringBuilder();
+                pathBuilder.append(entryPoint.getAlias()).append(" ");
+                pathBuilder.append(commandPathIterator.next());
+
+                while(getSpecByPath(pathBuilder.toString().trim()).isPresent()){
+                    commandSpec = getSpecByPath(pathBuilder.toString().trim()).get();
+                    pathBuilder.append(commandPathIterator.next()).append(" ");
+                }
+                commandPathIterator.previous();
+                commandSpec.getArguments().ifPresent(commandElements -> commandSpectedArguments.addAll(Arrays.asList(commandElements)));
+
+                List<String> passedArguments = new ArrayList<>();
+                commandPathIterator.forEachRemaining(passedArguments::add);
+
+                if(passedArguments.size() < commandSpectedArguments.size()) {
+                    sender.sendMessage(getCorrectUsageText(commandSpec, pathBuilder.toString()));
+                    return true;
+                }
+
+                try {
+                    arguments = populateArguments(passedArguments, commandSpectedArguments);
+                } catch (CastNotPossibleException e) {
+                    sender.sendMessage(getCorrectUsageText(commandSpec, pathBuilder.toString()));
+                    return true;
+                }
+
+            } else commandSpec = entryPoint;
+
+            CommandContext context = new CommandContext(arguments, sender, System.currentTimeMillis()/1000);
+
+            if(commandSpec.isPlayerOnly() && !(sender instanceof Player)) {
+                sender.sendMessage("§cCommand for player only.");
+                return true;
+            }
+
+            if(commandSpec.getPermission().isPresent() && !sender.hasPermission(commandSpec.getPermission().get())) {
+                sender.sendMessage("§cYou are not allowed to perform this command.");
+                return true;
+            }
+
+            CommandResult cmdResult = commandSpec.getExecutor().execute(context);
+
+            cmdResult.getResult().ifPresent(result -> {
+                cmdResult.getMessage().ifPresent(message -> {
+                    switch(result){
+                        case NONE:
+                            sender.sendMessage(message);
+                            break;
+                        case FAILURE:
+                            sender.sendMessage("§c" + message);
+                            if(sender instanceof Player){
+                                Player p = (Player) sender;
+                                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 1.0f);
                             }
-                            if(previousArg.equalsIgnoreCase("")){
-                                previousArg = specArgumentsIterator.previous();
-                            }
-                            text+=argsIterator.next() + " ";
-                        }
-                        if(specArgumentsIterator.hasNext()){
-                            args.put(specArgumentsIterator.next(), argsIterator.next());
-                        }
-                    }
-                    args.remove(previousArg);
-                    args.put(previousArg, text.trim());
-                }
-
-
-                if(specArgumentsIterator.hasNext()) {
-                    final StringBuilder correctUsage = new StringBuilder();
-                    correctUsage.append("§cUso correto: " + path);
-                    spec.getArguments().forEach(str -> correctUsage.append("<").append(str).append("> "));
-                }
-
-                if(spec.isPlayerOnly()){
-                    if(!(commandSender instanceof Player)){
-                        commandSender.sendMessage("§cEsse comando é apenas para jogadores.");
-                    }
-                }
-
-                spec.getPermission().ifPresent(perm -> {
-                    if(!commandSender.hasPermission(perm)) {
-                        commandSender.sendMessage("§cVocê não tem permissão para utilizar esse comando.");
-                    }
-                });
-
-                CommandResult result = spec.getExecutor().execute(commandSender, args);
-                if(result.getResult() != Result.NONE){
-                    switch (result.getResult()){
+                            break;
                         case SUCCESS:
-                            if(commandSender instanceof Player){
-                                Player p = (Player) commandSender;
+                            sender.sendMessage("§a" + message);
+                            if(sender instanceof Player){
+                                Player p = (Player) sender;
                                 p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
                             }
                             break;
-                        case FAILURE:
-                            if(commandSender instanceof Player){
-                                Player p = (Player) commandSender;
-                                p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 1.0f);
-                            }
                     }
-                }
+                });
+            });
 
-                if(result.getMessage() != null){
-                    switch (result.getResult()){
-                        case SUCCESS:
-                            commandSender.sendMessage("§a" + result.getMessage());
-                            break;
-                        case FAILURE:
-                            commandSender.sendMessage("§c" + result.getMessage());
-                            break;
-                        case NONE:
-                            commandSender.sendMessage(result.getMessage());
-                            break;
-                    }
-                }
-
-                return false;
-            }
+            return false;
         });
     }
 
-    public static CommandSpec getSpecByPath(String path) {
-        for(CommandSpec spec : registry){
-            if(findPath(spec).equalsIgnoreCase(path)){
-                return spec;
-            }
-        }
-        return null;
+    public static Optional<CommandSpec> getSpecByPath(String path) {
+        return registry.stream().filter(commandSpec -> findPath(commandSpec).equalsIgnoreCase(path)).findFirst();
     }
 
     public static String findPath(CommandSpec spec){
-        List<String> path = new ArrayList<>();
-        path.add(spec.getAlias());
-        spec.getBelongsTo().ifPresent(spc -> {
-            Optional<CommandSpec> belonger = spc.getBelongsTo();
-            path.add(belonger.get().getAlias());
-            while(belonger.isPresent()){
-                belonger = belonger.get().getBelongsTo();
-                if(belonger.isPresent()){
-                    path.add(belonger.get().getAlias());
-                }
-            }
-        });
-        Collections.reverse(path);
-        String pathString = "";
-        for(String str : path){
-            pathString += str + " ";
+        if(!spec.getBelonger().isPresent()) return spec.getAlias();
+
+        StringBuilder path = new StringBuilder();
+        CommandSpec belongsTo = spec;
+
+        while(belongsTo.getBelonger().isPresent()) {
+            path.append(belongsTo.getAlias()).append(" ");
+            belongsTo = belongsTo.getBelonger().get();
         }
-        return pathString.trim();
+
+        return String.join(" ", path.toString().trim().split(" "));
     }
 
+    private static String getCorrectUsageText(CommandSpec spec, String path) {
+        if(spec.getArguments().isPresent()) {
+            StringBuilder correctUsage = new StringBuilder();
+            correctUsage.append("§cCorrect usage: ").append(path).append(" ");
+            Arrays.asList(spec.getArguments().get())
+                    .forEach(arg -> correctUsage.append("§c<").append(arg.getKey()).append("§c>").append(" "));
+            return correctUsage.toString();
+        }
+        return "§cCorrect usage: " + path;
+    }
 
+    private static Map<String, Object> populateArguments(List<String> passedArgs, List<CommandElement> spectedArguments) throws CastNotPossibleException {
+        Map<String, Object> args = new HashMap<>();
+        Iterator<String> passedArgsIterator = passedArgs.iterator();
+        Iterator<CommandElement> spectedArgumentsIterator = spectedArguments.iterator();
+
+        while (passedArgsIterator.hasNext()) {
+            String passedArg = passedArgsIterator.next();
+            CommandElement spectedArgument = spectedArgumentsIterator.next();
+            if(spectedArgument.isJoinString()) {
+                StringBuilder passedText = new StringBuilder();
+                passedText.append(passedArg).append(" ");
+                passedArgsIterator.forEachRemaining(x -> passedText.append(x).append(" "));
+                args.put(spectedArgument.getKey(), passedText.toString().trim());
+            }else{
+                args.put(spectedArgument.getKey(), spectedArgument.cast(passedArg));
+            }
+        }
+
+        return args;
+    }
 }
 

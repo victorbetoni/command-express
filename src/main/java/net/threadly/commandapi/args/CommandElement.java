@@ -3,12 +3,16 @@ package net.threadly.commandapi.args;
 import net.threadly.commandapi.args.cast.Caster;
 import net.threadly.commandapi.exception.CastNotPossibleException;
 
+import java.util.Objects;
+
 public class CommandElement<T,U> {
     private String key;
     private Caster<T,U> caster;
+    private boolean isJoinString = false;
 
-    public CommandElement(String key, Caster<T,U> caster) {
+    public CommandElement(String key, boolean isJoinString, Caster<T, U> caster) {
         this.key = key;
+        this.isJoinString = isJoinString;
         this.caster = caster;
     }
 
@@ -19,4 +23,6 @@ public class CommandElement<T,U> {
     public String getKey() {
         return key;
     }
+
+    public boolean isJoinString() { return isJoinString; }
 }

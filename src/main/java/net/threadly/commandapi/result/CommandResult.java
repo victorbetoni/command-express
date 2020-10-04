@@ -1,8 +1,11 @@
 package net.threadly.commandapi.result;
 
+import javax.annotation.Nullable;
+import java.util.Optional;
+
 public class CommandResult {
-    private Result result;
-    private String message;
+    private Optional<Result> result;
+    private Optional<String> message;
 
     public static class Builder {
         private Result result;
@@ -23,20 +26,20 @@ public class CommandResult {
         }
     }
 
-    public CommandResult(String message, Result result){
-        this.result = result;
-        this.message = message;
+    public CommandResult(@Nullable String message, @Nullable Result result){
+        this.result = Optional.ofNullable(result);
+        this.message = Optional.ofNullable(message);
     }
 
     public static Builder builder(){
         return new Builder();
     }
 
-    public Result getResult() {
+    public Optional<Result> getResult() {
         return result;
     }
 
-    public String getMessage() {
+    public Optional<String> getMessage() {
         return message;
     }
 }
