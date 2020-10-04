@@ -1,6 +1,7 @@
 package net.threadly.commandapi;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class CommandSpec {
@@ -9,8 +10,8 @@ public class CommandSpec {
     private Set<CommandSpec> childs = new HashSet<>();
     private List<String> arguments = new ArrayList<>();
     private boolean playerOnly;
-    private Optional<CommandSpec> belongsTo = Optional.empty();
-    private Optional<String> permission = Optional.empty();
+    private Optional<CommandSpec> belongsTo;
+    private Optional<String> permission;
 
     public static class Builder {
         private String alias;
@@ -60,7 +61,7 @@ public class CommandSpec {
 
     }
 
-    public CommandSpec(String alias, Set<CommandSpec> childs, CommandRunner executor, List<String> arguments, boolean playerOnly, Optional<String> permission) {
+    public CommandSpec(String alias, Set<CommandSpec> childs, CommandRunner executor, @Nullable List<String> arguments, boolean playerOnly, @Nullable Optional<String> permission) {
         this.alias = alias;
         this.childs = childs;
         this.executor = executor;
