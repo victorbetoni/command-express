@@ -1,4 +1,4 @@
-package net.threadly.commandapi;
+package net.threadly.commandapi.result;
 
 public class CommandResult {
     private Result result;

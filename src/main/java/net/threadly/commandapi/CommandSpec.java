@@ -1,25 +1,32 @@
 package net.threadly.commandapi;
 
-import javax.annotation.Nonnull;
+import net.threadly.commandapi.args.CommandElement;
+
 import javax.annotation.Nullable;
 import java.util.*;
 
 public class CommandSpec {
-    private final String alias;
-    private final CommandRunner executor;
-    private Set<CommandSpec> childs = new HashSet<>();
-    private List<String> arguments = new ArrayList<>();
+    private String alias;
+    private CommandRunner executor;
     private boolean playerOnly;
-    private Optional<CommandSpec> belongsTo;
     private Optional<String> permission;
+    private Optional<Set<CommandSpec>> childs;
+    private Optional<CommandElement[]> arguments;
+    private Optional<CommandSpec> belonger;
 
     public static class Builder {
         private String alias;
-        private Set<CommandSpec> childs = new HashSet<>();
         private CommandRunner executor;
-        private List<String> arguments = new ArrayList<>();
         private boolean playerOnly = false;
-        private Optional<String> permission;
+
+        @Nullable
+        private String permission;
+
+        @Nullable
+        private Set<CommandSpec> childs;
+
+        @Nullable
+        private CommandElement[] arguments;
 
         public Builder alias(String alias){
             this.alias = alias;
@@ -27,16 +34,17 @@ public class CommandSpec {
         }
 
         public Builder playerOnly() {
-            this.playerOnly = true;
+            this.playerOnly = !playerOnly;
             return this;
         }
 
         public Builder permission(String permission){
-            this.permission = Optional.of(permission);
+            this.permission = permission;
             return this;
         }
 
         public Builder child(CommandSpec spec){
+            if(childs == null) childs = new HashSet<>();
             childs.add(spec);
             return this;
         }
@@ -46,27 +54,25 @@ public class CommandSpec {
             return this;
         }
 
-        public Builder arguments(String... arguments){
-            this.arguments = Arrays.asList(arguments);
+        public Builder arguments(CommandElement... arguments){
+            this.arguments = arguments;
             return this;
         }
 
         public CommandSpec build() {
-            CommandSpec spec = new CommandSpec(alias, childs, executor, arguments, playerOnly, permission);
-            for(CommandSpec cmd : childs){
-                spec.setBelongsTo(spec);
-            }
+            final CommandSpec spec = new CommandSpec(alias, executor, playerOnly, arguments, permission, childs);
+            spec.getChilds().ifPresent(commandSpecs -> commandSpecs.forEach(x -> x.setBelonger(spec)));
             return spec;
         }
 
     }
 
-    public CommandSpec(String alias, Set<CommandSpec> childs, CommandRunner executor, @Nullable List<String> arguments, boolean playerOnly, @Nullable Optional<String> permission) {
+    public CommandSpec(String alias, CommandRunner executor, boolean playerOnly, @Nullable CommandElement[] arguments, @Nullable String permission, @Nullable Set<CommandSpec> childs) {
         this.alias = alias;
-        this.childs = childs;
         this.executor = executor;
-        this.arguments = arguments;
-        this.permission = permission;
+        this.childs = Optional.ofNullable(childs);
+        this.arguments = Optional.ofNullable(arguments);
+        this.permission = Optional.ofNullable(permission);
         this.playerOnly = playerOnly;
     }
 
@@ -78,7 +84,7 @@ public class CommandSpec {
         return alias;
     }
 
-    public Set<CommandSpec> getChilds() {
+    public Optional<Set<CommandSpec>> getChilds() {
         return childs;
     }
 
@@ -86,16 +92,14 @@ public class CommandSpec {
         return executor;
     }
 
-    public List<String> getArguments() {
-        return arguments;
+    public Optional<CommandElement[]> getArguments() { return arguments; }
+
+    public Optional<CommandSpec> getBelonger(){
+        return belonger;
     }
 
-    public Optional<CommandSpec> getBelongsTo(){
-        return belongsTo;
-    }
-
-    public void setBelongsTo(CommandSpec spec){
-        this.belongsTo = Optional.of(spec);
+    public void setBelonger(CommandSpec spec){
+        this.belonger = Optional.of(spec);
     }
 
     public boolean isPlayerOnly() {

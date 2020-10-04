@@ -1,9 +1,7 @@
 package net.threadly.commandapi;
 
-import net.threadly.commandapi.Result;
-import net.threadly.commandapi.args.CommandElement;
-import net.threadly.commandapi.args.GenericArguments;
-import org.bukkit.OfflinePlayer;
+import net.threadly.commandapi.result.CommandResult;
+import net.threadly.commandapi.result.Result;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -35,9 +33,6 @@ public class CommandAPI extends JavaPlugin {
                 ListIterator<String> specArgumentsIterator = spec.getArguments().listIterator();
                 StringBuilder path = new StringBuilder();
                 path.append(spec.getAlias());
-
-                CommandElement<OfflinePlayer> str = GenericArguments.offlinePlayer("bruh");
-                String rfs = str.cast("bruh", "bruh");
 
                 if(argsIterator.hasNext()){
                     path.append(argsIterator.next());;
