@@ -3,7 +3,6 @@ package net.threadly.commandapi.args;
 import net.threadly.commandapi.args.cast.Caster;
 import net.threadly.commandapi.exception.CastNotPossibleException;
 
-import java.util.Objects;
 
 public class CommandElement<T,U> {
     private String key;
