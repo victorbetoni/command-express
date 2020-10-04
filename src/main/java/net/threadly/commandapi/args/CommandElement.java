@@ -1,35 +1,22 @@
 package net.threadly.commandapi.args;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import net.threadly.commandapi.args.cast.Caster;
+import net.threadly.commandapi.exception.CastNotPossibleException;
 
-import java.util.function.Function;
-
-public class CommandElement {
+public class CommandElement<T> {
     private String key;
-    private Object element;
-    private Class<?> type;
-    private Function<Object, Boolean> check;
+    private Caster<T> caster;
 
-    public CommandElement(String key, Object element, Class<?> type, Function<Object, Boolean> check) {
+    public CommandElement(String key, Caster<T> caster) {
         this.key = key;
-        this.element = element;
-        this.type = type;
-        this.check = check;
+        this.caster = caster;
     }
 
-    public boolean check(Object passedElement) {
-        return check.apply(passedElement);
+    public T cast(String rawValue) throws CastNotPossibleException {
+        return caster.cast(rawValue);
     }
 
     public String getKey() {
         return key;
-    }
-
-    public Object getElement() {
-        return element;
-    }
-
-    public Class<?> getType() {
-        return type;
     }
 }
