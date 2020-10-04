@@ -6,8 +6,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class GenericArguments {
 
@@ -69,6 +72,12 @@ public final class GenericArguments {
             }catch (ClassCastException ex) {
                 throw new CastNotPossibleException();
             }
+        });
+    }
+
+    public static CommandElement<String[], String> joinString(String key) {
+        return new CommandElement<>(key, (passedArgument) -> {
+            return Arrays.stream(passedArgument).map(String::valueOf).collect(Collectors.joining(" ")).trim();
         });
     }
 }
