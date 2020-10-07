@@ -61,7 +61,10 @@ public class CommandSpec {
 
         public CommandSpec build() {
             final CommandSpec spec = new CommandSpec(alias, executor, playerOnly, arguments, permission, childs);
-            spec.getChilds().ifPresent(commandSpecs -> commandSpecs.forEach(x -> x.setBelonger(spec)));
+            spec.getChilds().ifPresent((commandSpecs) -> commandSpecs.forEach((x) -> {
+                CommandAPI.register(x);
+                x.setBelonger(spec);
+            }));
             return spec;
         }
 
