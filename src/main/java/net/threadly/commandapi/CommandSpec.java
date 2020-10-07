@@ -12,7 +12,7 @@ public class CommandSpec {
     private Optional<String> permission;
     private Optional<Set<CommandSpec>> childs;
     private Optional<CommandElement[]> arguments;
-    private Optional<CommandSpec> belonger;
+    private Optional<CommandSpec> belonger = Optional.empty();
 
     public static class Builder {
         private String alias;

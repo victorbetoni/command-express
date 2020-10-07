@@ -4,6 +4,7 @@ import net.threadly.commandapi.args.CommandContext;
 import net.threadly.commandapi.args.CommandElement;
 import net.threadly.commandapi.exception.CastNotPossibleException;
 import net.threadly.commandapi.result.CommandResult;
+import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,7 +26,7 @@ public class CommandAPI extends JavaPlugin {
     public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec entryPoint){
         Objects.requireNonNull(plugin.getCommand(entryPoint.getAlias())).setExecutor((sender, command, label, args) -> {
 
-            CommandSpec commandSpec = null;
+            CommandSpec commandSpec = entryPoint;
 
             ListIterator<String> commandPathIterator = Arrays.asList(args).listIterator();
             ArrayList<CommandElement> commandSpectedArguments = new ArrayList<>();
@@ -37,12 +38,16 @@ public class CommandAPI extends JavaPlugin {
                 pathBuilder.append(entryPoint.getAlias()).append(" ");
                 pathBuilder.append(commandPathIterator.next());
 
-                while(getSpecByPath(pathBuilder.toString().trim()).isPresent()){
+                do {
                     commandSpec = getSpecByPath(pathBuilder.toString().trim()).get();
-                    pathBuilder.append(commandPathIterator.next()).append(" ");
-                }
+                    if(commandPathIterator.hasNext()) pathBuilder.append(commandPathIterator.next()).append(" ");
+                }while(getSpecByPath(pathBuilder.toString().trim()).isPresent() && commandPathIterator.hasNext());
+
                 commandPathIterator.previous();
-                commandSpec.getArguments().ifPresent(commandElements -> commandSpectedArguments.addAll(Arrays.asList(commandElements)));
+
+                commandSpec.getArguments().ifPresent((commandElements) -> {
+                    commandSpectedArguments.addAll(Arrays.asList(commandElements));
+                });
 
                 List<String> passedArguments = new ArrayList<>();
                 commandPathIterator.forEachRemaining(passedArguments::add);
@@ -59,7 +64,7 @@ public class CommandAPI extends JavaPlugin {
                     return true;
                 }
 
-            } else commandSpec = entryPoint;
+            }
 
             CommandContext context = new CommandContext(arguments, sender, System.currentTimeMillis()/1000);
 
@@ -82,14 +87,14 @@ public class CommandAPI extends JavaPlugin {
                             sender.sendMessage(message);
                             break;
                         case FAILURE:
-                            sender.sendMessage("§c" + message);
+                            sender.sendMessage(ChatColor.RED + message);
                             if(sender instanceof Player){
                                 Player p = (Player) sender;
                                 p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 1.0f);
                             }
                             break;
                         case SUCCESS:
-                            sender.sendMessage("§a" + message);
+                            sender.sendMessage(ChatColor.GREEN + message);
                             if(sender instanceof Player){
                                 Player p = (Player) sender;
                                 p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
@@ -112,13 +117,17 @@ public class CommandAPI extends JavaPlugin {
 
         StringBuilder path = new StringBuilder();
         CommandSpec belongsTo = spec;
+        path.append(spec.getAlias()).append(" ");
 
         while(belongsTo.getBelonger().isPresent()) {
-            path.append(belongsTo.getAlias()).append(" ");
             belongsTo = belongsTo.getBelonger().get();
+            path.append(belongsTo.getAlias()).append(" ");
         }
 
-        return String.join(" ", path.toString().trim().split(" "));
+        List<String> pathArgs = Arrays.asList(path.toString().trim().split(" "));
+        Collections.reverse(pathArgs);
+
+        return String.join(" ", pathArgs);
     }
 
     private static String getCorrectUsageText(CommandSpec spec, String path) {
@@ -139,14 +148,16 @@ public class CommandAPI extends JavaPlugin {
 
         while (passedArgsIterator.hasNext()) {
             String passedArg = passedArgsIterator.next();
-            CommandElement spectedArgument = spectedArgumentsIterator.next();
-            if(spectedArgument.isJoinString()) {
-                StringBuilder passedText = new StringBuilder();
-                passedText.append(passedArg).append(" ");
-                passedArgsIterator.forEachRemaining(x -> passedText.append(x).append(" "));
-                args.put(spectedArgument.getKey(), passedText.toString().trim());
-            }else{
-                args.put(spectedArgument.getKey(), spectedArgument.cast(passedArg));
+            if(spectedArgumentsIterator.hasNext()) {
+                CommandElement spectedArgument = spectedArgumentsIterator.next();
+                if(spectedArgument.isJoinString()) {
+                    StringBuilder passedText = new StringBuilder();
+                    passedText.append(passedArg).append(" ");
+                    passedArgsIterator.forEachRemaining(x -> passedText.append(x).append(" "));
+                    args.put(spectedArgument.getKey(), passedText.toString().trim());
+                }else{
+                    args.put(spectedArgument.getKey(), spectedArgument.cast(passedArg));
+                }
             }
         }
 
