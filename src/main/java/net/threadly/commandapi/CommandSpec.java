@@ -16,7 +16,7 @@ public class CommandSpec {
     private Optional<CommandSpec> belonger = Optional.empty();
 
     public static class Builder {
-        private Set<String> aliases;
+        private Set<String> aliases = new HashSet<>();
         private CommandRunner executor;
         private boolean playerOnly = false;
 

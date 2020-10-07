@@ -10,42 +10,50 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class CommandAPI extends JavaPlugin {
     private static Set<CommandSpec> registry;
 
     @Override
     public void onEnable() {
-        this.registry = new HashSet<>();
+        registry = new HashSet<>();
     }
 
     public static void register(CommandSpec spec){
         registry.add(spec);
     }
 
-    public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec entryPoint){
-        Objects.requireNonNull(plugin.getCommand(entryPoint.getAlias())).setExecutor((sender, command, label, args) -> {
+    public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec rootCmd, String alias){
+        Objects.requireNonNull(plugin.getCommand(alias)).setExecutor((sender, command, label, args) -> {
 
-            CommandSpec commandSpec = entryPoint;
+            AtomicReference<CommandSpec> currentSpec = new AtomicReference<>();
 
             ListIterator<String> commandPathIterator = Arrays.asList(args).listIterator();
             ArrayList<CommandElement> commandSpectedArguments = new ArrayList<>();
 
             Map<String, Object> arguments = new HashMap<>();
 
-            if(commandPathIterator.hasNext()) {
+            if(commandPathIterator.hasNext()){
                 StringBuilder pathBuilder = new StringBuilder();
-                pathBuilder.append(entryPoint.getAlias()).append(" ");
-                pathBuilder.append(commandPathIterator.next());
+                AtomicReference<String> currentArg = new AtomicReference<>();
+                currentSpec.set(rootCmd);
 
-                do {
-                    commandSpec = getSpecByPath(pathBuilder.toString().trim()).get();
-                    if(commandPathIterator.hasNext()) pathBuilder.append(commandPathIterator.next()).append(" ");
-                }while(getSpecByPath(pathBuilder.toString().trim()).isPresent() && commandPathIterator.hasNext());
+                while(commandPathIterator.hasNext()) {
+                    currentArg.set(commandPathIterator.next());
+                    pathBuilder.append(currentArg.get()).append(" ");
+                    if(currentSpec.get().getChilds().isPresent()) {
+                        currentSpec.get().getChilds().get().forEach((child) -> {
+                            if (child.getAliases().contains(currentArg.get())) currentSpec.set(child);
+                        });
+                    }else{
+                        break;
+                    }
+                }
 
                 commandPathIterator.previous();
 
-                commandSpec.getArguments().ifPresent((commandElements) -> {
+                currentSpec.get().getArguments().ifPresent((commandElements) -> {
                     commandSpectedArguments.addAll(Arrays.asList(commandElements));
                 });
 
@@ -53,32 +61,31 @@ public class CommandAPI extends JavaPlugin {
                 commandPathIterator.forEachRemaining(passedArguments::add);
 
                 if(passedArguments.size() < commandSpectedArguments.size()) {
-                    sender.sendMessage(getCorrectUsageText(commandSpec, pathBuilder.toString()));
+                    sender.sendMessage(getCorrectUsageText(currentSpec.get(), pathBuilder.toString()));
                     return true;
                 }
 
                 try {
                     arguments = populateArguments(passedArguments, commandSpectedArguments);
                 } catch (CastNotPossibleException e) {
-                    sender.sendMessage(getCorrectUsageText(commandSpec, pathBuilder.toString()));
+                    sender.sendMessage(getCorrectUsageText(currentSpec.get(), pathBuilder.toString()));
                     return true;
                 }
-
             }
 
             CommandContext context = new CommandContext(arguments, sender, System.currentTimeMillis()/1000);
 
-            if(commandSpec.isPlayerOnly() && !(sender instanceof Player)) {
+            if(currentSpec.get().isPlayerOnly() && !(sender instanceof Player)) {
                 sender.sendMessage("§cCommand for player only.");
                 return true;
             }
 
-            if(commandSpec.getPermission().isPresent() && !sender.hasPermission(commandSpec.getPermission().get())) {
+            if(currentSpec.get().getPermission().isPresent() && !sender.hasPermission(currentSpec.get().getPermission().get())) {
                 sender.sendMessage("§cYou are not allowed to perform this command.");
                 return true;
             }
 
-            CommandResult cmdResult = commandSpec.getExecutor().execute(context);
+            CommandResult cmdResult = currentSpec.get().getExecutor().execute(context);
 
             cmdResult.getResult().ifPresent(result -> {
                 cmdResult.getMessage().ifPresent(message -> {
@@ -108,30 +115,8 @@ public class CommandAPI extends JavaPlugin {
         });
     }
 
-    public static Optional<CommandSpec> getSpecByPath(String path) {
-        return registry.stream().filter(commandSpec -> findPath(commandSpec).equalsIgnoreCase(path)).findFirst();
-    }
-
-    public static String findPath(CommandSpec spec){
-        if(!spec.getBelonger().isPresent()) return spec.getAlias();
-
-        StringBuilder path = new StringBuilder();
-        CommandSpec belongsTo = spec;
-        path.append(spec.getAlias()).append(" ");
-
-        while(belongsTo.getBelonger().isPresent()) {
-            belongsTo = belongsTo.getBelonger().get();
-            path.append(belongsTo.getAlias()).append(" ");
-        }
-
-        List<String> pathArgs = Arrays.asList(path.toString().trim().split(" "));
-        Collections.reverse(pathArgs);
-
-        return String.join(" ", pathArgs);
-    }
-
     private static String getCorrectUsageText(CommandSpec spec, String path) {
-        if(spec.getArguments().isPresent()) {
+        if (spec.getArguments().isPresent()) {
             StringBuilder correctUsage = new StringBuilder();
             correctUsage.append("§cCorrect usage: ").append(path).append(" ");
             Arrays.asList(spec.getArguments().get())
