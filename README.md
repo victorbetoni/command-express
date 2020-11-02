@@ -1,4 +1,4 @@
-<h1>Command API </h1>
+<h1>CommandExpress </h1>
 <p>Making the command's creation and arguments handling in Bukkit more simpler :)</p>
 
 <h3>Contribution</h3>
