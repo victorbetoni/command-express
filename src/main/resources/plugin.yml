@@ -1,5 +1,5 @@
-name: CommandAPI
+name: CommandExpress
 version: 1.0
-main: net.threadly.commandapi.CommandAPI
+main: net.threadly.commandexpress.CommandExpress
 api-version: 1.15
 authors: [threadly]

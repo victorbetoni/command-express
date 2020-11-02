@@ -1,9 +1,9 @@
-package net.threadly.commandapi;
+package net.threadly.commandexpress;
 
-import net.threadly.commandapi.args.CommandContext;
-import net.threadly.commandapi.args.CommandElement;
-import net.threadly.commandapi.exception.CastNotPossibleException;
-import net.threadly.commandapi.result.CommandResult;
+import net.threadly.commandexpress.args.CommandContext;
+import net.threadly.commandexpress.args.CommandElement;
+import net.threadly.commandexpress.exception.CastNotPossibleException;
+import net.threadly.commandexpress.result.CommandResult;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -12,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class CommandAPI extends JavaPlugin {
+public class CommandExpress extends JavaPlugin {
     private static Set<CommandSpec> registry;
 
     @Override

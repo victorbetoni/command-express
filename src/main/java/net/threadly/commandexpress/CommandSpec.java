@@ -1,7 +1,6 @@
-package net.threadly.commandapi;
+package net.threadly.commandexpress;
 
-import net.threadly.commandapi.args.CommandElement;
-import org.omg.CORBA.WStringSeqHelper;
+import net.threadly.commandexpress.args.CommandElement;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -59,7 +58,7 @@ public class CommandSpec {
         public CommandSpec build() {
             final CommandSpec spec = new CommandSpec(aliases, executor, playerOnly, arguments, permission, childs);
             spec.getChilds().ifPresent((commandSpecs) -> commandSpecs.forEach((x) -> {
-                CommandAPI.register(x);
+                CommandExpress.register(x);
                 x.setBelonger(spec);
             }));
             return spec;

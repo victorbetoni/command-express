@@ -1,6 +1,6 @@
-package net.threadly.commandapi.args.cast;
+package net.threadly.commandexpress.args.cast;
 
-import net.threadly.commandapi.exception.CastNotPossibleException;
+import net.threadly.commandexpress.exception.CastNotPossibleException;
 
 public interface Caster<T, U> {
 

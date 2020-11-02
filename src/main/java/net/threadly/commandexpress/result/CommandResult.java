@@ -1,4 +1,4 @@
-package net.threadly.commandapi.result;
+package net.threadly.commandexpress.result;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
