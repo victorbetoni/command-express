@@ -85,7 +85,7 @@ public class CommandExpress extends JavaPlugin {
                 return true;
             }
 
-            CommandResult cmdResult = currentSpec.get().getExecutor().execute(context);
+            CommandResult cmdResult = currentSpec.get().getExecutor().execute(context, args);
 
             cmdResult.getResult().ifPresent(result -> {
                 cmdResult.getMessage().ifPresent(message -> {
