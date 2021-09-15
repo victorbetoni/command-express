@@ -13,16 +13,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CommandExpress extends JavaPlugin {
-    private static Set<CommandSpec> registry;
-
-    @Override
-    public void onEnable() {
-        registry = new HashSet<>();
-    }
-
-    public static void register(CommandSpec spec){
-        registry.add(spec);
-    }
 
     public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec rootCmd, String alias){
         Objects.requireNonNull(plugin.getCommand(alias)).setExecutor((sender, command, label, args) -> {
@@ -53,9 +43,8 @@ public class CommandExpress extends JavaPlugin {
 
                 commandPathIterator.previous();
 
-                currentSpec.get().getArguments().ifPresent((commandElements) -> {
-                    commandSpectedArguments.addAll(Arrays.asList(commandElements));
-                });
+                currentSpec.get().getArguments().ifPresent((commandElements) ->
+                    commandSpectedArguments.addAll(Arrays.asList(commandElements)));
 
                 List<String> passedArguments = new ArrayList<>();
                 commandPathIterator.forEachRemaining(passedArguments::add);
@@ -71,17 +60,19 @@ public class CommandExpress extends JavaPlugin {
                     sender.sendMessage(getCorrectUsageText(currentSpec.get(), pathBuilder.toString()));
                     return true;
                 }
+            } else {
+                currentSpec.set(rootCmd);
             }
 
             CommandContext context = new CommandContext(arguments, sender, System.currentTimeMillis()/1000);
 
             if(currentSpec.get().isPlayerOnly() && !(sender instanceof Player)) {
-                sender.sendMessage("§cCommand for player only.");
+                sender.sendMessage(ChatColor.RED + "Command for player only.");
                 return true;
             }
 
             if(currentSpec.get().getPermission().isPresent() && !sender.hasPermission(currentSpec.get().getPermission().get())) {
-                sender.sendMessage("§cYou are not allowed to perform this command.");
+                sender.sendMessage(ChatColor.RED + "You are not allowed to perform this command.");
                 return true;
             }
 
@@ -118,12 +109,12 @@ public class CommandExpress extends JavaPlugin {
     private static String getCorrectUsageText(CommandSpec spec, String path) {
         if (spec.getArguments().isPresent()) {
             StringBuilder correctUsage = new StringBuilder();
-            correctUsage.append("§cCorrect usage: ").append(path).append(" ");
+            correctUsage.append(ChatColor.RED + "Correct usage: ").append(path).append(" ");
             Arrays.asList(spec.getArguments().get())
-                    .forEach(arg -> correctUsage.append("§c<").append(arg.getKey()).append("§c>").append(" "));
+                    .forEach(arg -> correctUsage.append(ChatColor.RED + "<").append(arg.getKey()).append(ChatColor.RED + ">").append(" "));
             return correctUsage.toString();
         }
-        return "§cCorrect usage: " + path;
+        return ChatColor.RED + "Correct usage: " + path;
     }
 
     private static Map<String, Object> populateArguments(List<String> passedArgs, List<CommandElement> spectedArguments) throws CastNotPossibleException {
