@@ -2,28 +2,28 @@ plugins {
     id 'java-library'
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+compileJava.options.encoding = "UTF-8"
+compileJava.sourceCompatibility = "1.7"
+compileJava.sourceCompatibility = "1.7"
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
 
 repositories {
     jcenter()
-    mavenCentral()
     maven {
-        name = 'papermc-repo'
-        url = 'https://papermc.io/repo/repository/maven-public/'
+        url "https://hub.spigotmc.org/nexus/content/repositories/snapshots"
     }
     maven {
-        name = 'sonatype'
-        url = 'https://oss.sonatype.org/content/groups/public/'
+        url 'https://jitpack.io'
+    }
+    maven {
+        url "https://repo.codemc.io/repository/maven-public/"
     }
 }
 
 dependencies {
-    api 'org.apache.commons:commons-math3:3.6.1'
-    implementation 'com.google.guava:guava:26.0-jre'
-    testImplementation 'junit:junit:4.12'
-
-    compileOnly 'com.destroystokyo.paper:paper-api:1.15.2-R0.1-SNAPSHOT'
     compile fileTree(dir:'libs', include:['*.jar'])
 
 }
