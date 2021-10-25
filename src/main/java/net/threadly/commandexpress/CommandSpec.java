@@ -1,9 +1,13 @@
 package net.threadly.commandexpress;
 
+import java7.util.Optional;
+import java7.util.function.Consumer;
 import net.threadly.commandexpress.args.CommandElement;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CommandSpec {
     private Set<String> aliases;
@@ -57,9 +61,14 @@ public class CommandSpec {
 
         public CommandSpec build() {
             final CommandSpec spec = new CommandSpec(aliases, executor, playerOnly, arguments, permission, childs);
-            spec.getChilds().ifPresent((commandSpecs) -> commandSpecs.forEach((x) -> {
-                x.setBelonger(spec);
-            }));
+            spec.getChilds().ifPresent(new Consumer<Set<CommandSpec>>() {
+                @Override
+                public void accept(Set<CommandSpec> commandSpecs) {
+                    for(CommandSpec x : commandSpecs) {
+                        x.setBelonger(spec);
+                    }
+                }
+            });
             return spec;
         }
 

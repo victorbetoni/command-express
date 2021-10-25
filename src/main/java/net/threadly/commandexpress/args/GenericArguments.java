@@ -42,47 +42,69 @@ public final class GenericArguments {
         return new Builder<>();
     }
 
-    public static CommandElement<String, OfflinePlayer> offlinePlayer(String key) {
-        return new CommandElement<>(key, false, (passedArgument) -> {
-            return Bukkit.getOfflinePlayer(UUID.fromString(passedArgument));
+    public static CommandElement<String, OfflinePlayer> offlinePlayer(String name) {
+        return new CommandElement<>(name, false, new Caster<String, OfflinePlayer>() {
+            @Override
+            public OfflinePlayer cast(String rawValue) {
+                return Bukkit.getOfflinePlayer(rawValue);
+            }
         });
     }
 
-    public static CommandElement<String, Player> onlinePlayer(String key) {
-        return new CommandElement<>(key, false, (passedArgument) -> {
-            Optional<Player> player = Optional.ofNullable(Bukkit.getPlayer(UUID.fromString(passedArgument)));
-            player.orElseThrow(CastNotPossibleException::new);
-            return player.get();
+    public static CommandElement<String, Player> onlinePlayer(final String nick) {
+        return new CommandElement<>(nick, false, new Caster<String, Player>() {
+            @Override
+            public Player cast(String passedArgument) throws CastNotPossibleException {
+                return Bukkit.getPlayer(nick);
+            }
         });
     }
 
     public static CommandElement<String, String> string(String key) {
-        return new CommandElement<>(key, false, (passedArgument) -> (String) passedArgument);
+        return new CommandElement<>(key, false, new Caster<String, String>() {
+            @Override
+            public String cast(String passedArgument) throws CastNotPossibleException {
+                return (String) passedArgument;
+            }
+        });
     }
 
     public static CommandElement<String, Integer> integer(String key) {
-        return new CommandElement<>(key, false, (passedArgument) -> {
-            try {
-                return Integer.valueOf(passedArgument);
-            } catch (ClassCastException ex) {
-                throw new CastNotPossibleException();
+        return new CommandElement<>(key, false, new Caster<String, Integer>() {
+            @Override
+            public Integer cast(String passedArgument) throws CastNotPossibleException {
+                try {
+                    return Integer.valueOf(passedArgument);
+                } catch (ClassCastException ex) {
+                    throw new CastNotPossibleException();
+                }
             }
         });
     }
 
     public static CommandElement<String, Boolean> bool(String key) {
-        return new CommandElement<>(key, false, (passedArgument) -> {
-            try{
-                return Boolean.valueOf(passedArgument);
-            }catch (ClassCastException ex) {
-                throw new CastNotPossibleException();
+        return new CommandElement<>(key, false, new Caster<String, Boolean>() {
+            @Override
+            public Boolean cast(String passedArgument) throws CastNotPossibleException {
+                try {
+                    return Boolean.valueOf(passedArgument);
+                } catch (ClassCastException ex) {
+                    throw new CastNotPossibleException();
+                }
             }
         });
     }
 
     public static CommandElement<String[], String> joinString(String key) {
-        return new CommandElement<>(key, true, (passedArgument) -> {
-            return Arrays.stream(passedArgument).map(String::valueOf).collect(Collectors.joining(" ")).trim();
+        return new CommandElement<>(key, true, new Caster<String[], String>() {
+            @Override
+            public String cast(String[] passedArgument) throws CastNotPossibleException {
+                String string = "";
+                for (String s : passedArgument) {
+                    string += s + " ";
+                }
+                return string.trim();
+            }
         });
     }
 }

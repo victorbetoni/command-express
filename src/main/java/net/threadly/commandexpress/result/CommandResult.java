@@ -1,7 +1,7 @@
 package net.threadly.commandexpress.result;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
+import java7.util.Optional;
 
 public class CommandResult {
     private Optional<Result> result;
