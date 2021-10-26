@@ -51,7 +51,9 @@ public class Optional<T> {
     }
 
     public void ifPresent(Consumer<T> consumer) {
-        consumer.accept(value);
+        if(isPresent()) {
+            consumer.accept(value);
+        }
     }
 
     private static class Null {

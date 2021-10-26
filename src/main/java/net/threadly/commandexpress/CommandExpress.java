@@ -20,10 +20,10 @@ import java7.util.function.Consumer;
 public class CommandExpress extends JavaPlugin {
 
     public static void registerCommandEntryPoint(JavaPlugin plugin, final CommandSpec rootCmd, String alias){
-        Objects.requireNonNull(plugin.getCommand(alias)).setExecutor(new CommandExecutor() {
+        plugin.getCommand(alias).setExecutor(new CommandExecutor() {
             @Override
             public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
-
+                System.out.println("CHAMOU O COMANDO");
                 AtomicReference<CommandSpec> currentSpec = new AtomicReference<>();
 
                 ListIterator<String> commandPathIterator = Arrays.asList(args).listIterator();
